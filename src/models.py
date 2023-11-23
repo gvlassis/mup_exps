@@ -3,6 +3,7 @@ import torch
 class θNet(torch.nn.Module):
     def __init__(self, θ):
         super(θNet, self).__init__()
+        self.θ = θ
 
         # Convolutional part
         self.layer1 = torch.nn.Conv2d(in_channels=3, out_channels=3*θ, kernel_size=3, stride=2, padding=1)
@@ -45,7 +46,7 @@ class θNet(torch.nn.Module):
         z8 = self.layer8(a7)
         a8 = torch.nn.functional.relu(z8)
 
-        assert (a8.shape[-3]==384) and (a8.shape[-2]==1) and (a8.shape[-1]==1), "a8 shaped incorrectly: %dx%dx%d" % (a8.shape[-3],a8.shape[-2],a8.shape[-1])
+        assert (a8.shape[-3]==384*self.θ) and (a8.shape[-2]==1) and (a8.shape[-1]==1), "a8 shaped incorrectly: %dx%dx%d" % (a8.shape[-3],a8.shape[-2],a8.shape[-1])
 
         z9 = self.layer9(a8[...,0,0])
         a9 = torch.nn.functional.relu(z9)

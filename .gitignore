@@ -2,3 +2,4 @@ out
 .DS_Store
 src/test.py
 env
+src/__pycache__
