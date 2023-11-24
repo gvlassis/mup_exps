@@ -21,12 +21,12 @@ no = (1179594*θ**2)+(769614*θ)+100 # V2
 
 μ = B*no
 
-# O = (37158912*θ**2)+(13688832*θ)+8000000
-O = (37748736*θ**2)+(12152832*θ) # V2
+# MAD = (4644864*θ**2)+(2863104*θ)+4000000
+MAD = (4939776*θ**2)+(2095104*θ) # V2
 
-t_1_batch = O*BATCH_SIZE/Ops
+t_1_batch = MAD*BATCH_SIZE/Ops
 
-t_1_epoch = O*DATASET_SIZE/Ops
+t_1_epoch = MAD*DATASET_SIZE/Ops
 
 t__1_epoch = t__t_ratio * t_1_epoch
 
@@ -95,8 +95,7 @@ def user_friendly_s(s):
         return "%.2f us" % (μs)
 
 script_path = os.path.abspath(__file__)
-utils_path = os.path.dirname(script_path)
-src_path = os.path.dirname(utils_path)
+src_path = os.path.dirname(script_path)
 root_path = os.path.dirname(src_path)
 
 with open(os.path.join(root_path, "res/card_template.tex"), "r") as card_template:
@@ -110,6 +109,6 @@ with open(os.path.join(root_path, "out/model_card.tex"), "w") as model_card:
     model_card.writelines(card_template_lines[10:14])
 
     for i in range(len(θ)):
-        model_card.write("%d & %s & %s & %s & %s & %s \\\\\n" % (θ[i], user_friendly_number(no[i]), user_friendly_μ(μ[i]), user_friendly_O(O[i]), user_friendly_s(t_1_batch[i]), user_friendly_s(t__100_epochs[i])))
+        model_card.write("%d & %s & %s & %s & %s & %s \\\\\n" % (θ[i], user_friendly_number(no[i]), user_friendly_μ(μ[i]), user_friendly_O(MAD[i]), user_friendly_s(t_1_batch[i]), user_friendly_s(t__100_epochs[i])))
 
     model_card.writelines(card_template_lines[14:])
