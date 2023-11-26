@@ -16,7 +16,7 @@ function _resize(){
 	local image
 	for ((image=0; image<num_subimages; image++)); do
 
-		convert "${subimages_paths[$image]}" -resize 256x256 -background black -gravity center -extent 256x256 "${subimages_paths[$image]}"
+		convert "${subimages_paths[$image]}" -type truecolor -resize 256x256 -background black -gravity center -extent 256x256 "${subimages_paths[$image]}"
 
 		if (( $image % $update_frequency == 0)); then
 			printf "🍻 \x1b[96m$image/$((num_subimages-1))\x1b[0m\n"
