@@ -32,9 +32,42 @@ out_path = os.path.join(root_path, "out")
 print("🖥️  DEVICE=%s (Default: cuda>mps>cpu)" % DEVICE)
 
 print("🧠 Initializing model")
+
 model = models.θNet(args.theta).to(DEVICE)
+
+
+init_mult = 1
+
+input_layer = model.layer1
+hidden_layers = [model.layer2,model.layer3,model.layer4,model.layer5,model.layer6,model.layer7]
+output_layer = model.layer8
+for layer in [input_layer] + hidden_layers:
+    muP_init_input_hidden( layer, init_mult )
+muP_init_output( output_layer, init_mult )
+
+# Create your optimizer with these parameter group
 # model = models.VGG16().to(DEVICE)
-OPTIMIZER = torch.optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.beta1, args.beta2))
+
+# Standard ADAM
+
+# OPTIMIZER = torch.optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.beta1, args.beta2))
+
+lr_mult = 1
+
+# muP SGD
+# Create parameter groups
+param_groups = [
+    {"params": input_layer.parameters() , "lr": lr_mult*input_layer.out_features },
+    {"params": model.layer2.parameters(), "lr": lr_mult},
+    {"params": model.layer3.parameters(), "lr": lr_mult},
+    {"params": model.layer4.parameters(), "lr": lr_mult},
+    {"params": model.layer5.parameters(), "lr": lr_mult},
+    {"params": model.layer6.parameters(), "lr": lr_mult},
+    {"params": model.layer7.parameters(), "lr": lr_mult},
+    {"params": output_layer.parameters(), "lr": lr_mult*output_layer.out_features}
+]
+
+OPTIMIZER = torch.optim.SGD(param_groups, momentum=0.9)
 
 print("💾 Loading data")
 train_X=torch.load(os.path.join(args.datasets_directory,"train_X.pt"), map_location=DEVICE)
