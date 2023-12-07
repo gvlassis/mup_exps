@@ -2,8 +2,10 @@
 num_processes="${1}"
 # The path of the CLS-LOC directory, which contains the images under train/, val/ and test/
 CLS_LOC_path="${2}"
-# _resize() will output an update every "update_frequency" images resized
+# Images interval between updates of _resize()
 update_frequency="${3}"
+# The final height of the resized images
+height="${4}"
 
 images_paths=($(find "${CLS_LOC_path}" -name "*.JPEG"))
 num_images=${#images_paths[*]}
@@ -16,7 +18,7 @@ function _resize(){
 	local image
 	for ((image=0; image<num_subimages; image++)); do
 
-		convert "${subimages_paths[$image]}" -type truecolor -resize 256x256 -background black -gravity center -extent 256x256 "${subimages_paths[$image]}"
+		convert "${subimages_paths[$image]}" -type truecolor -resize "${height}x${height}" -background black -gravity center -extent "${height}x${height}" "${subimages_paths[$image]}"
 
 		if (( $image % $update_frequency == 0)); then
 			printf "🍻 \x1b[96m$image/$((num_subimages-1))\x1b[0m\n"
