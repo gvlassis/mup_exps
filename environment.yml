@@ -5,7 +5,13 @@ dependencies:
   - pip
   - pip:
     - matplotlib
-  - pip:
-    - --index-url https://download.pytorch.org/whl/cu118
-    - torch
-    - torchvision
+  - selectors:
+    - linux-64:
+      - pip:
+        - --index-url https://download.pytorch.org/whl/cu118
+        - torch
+        - torchvision
+    - osx-arm64:
+      - pip:
+        - torch
+        - torchvision
