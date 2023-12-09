@@ -1,37 +1,5 @@
 import torch
 
-
-# init layer:
-# - init: 1/fan_in
-# - SGD LR: fan_out
-# inbetween layers: 
-# -  init_var: 1/fan_in
-# -  SGR LR: 1
-# -  bias: 1/fan_in
-# output layer:
-# -
-
-def layer_fan_in(m):
-    if isinstance(m, torch.nn.Linear):
-        return m.in_features
-
-    if isinstance(m, torch.nn.Conv2d):
-        in_channels = m.in_channels
-        kernel_size = m.kernel_size
-        return in_channels*kernel_size*kernel_size
-
-def muP_init_input_hidden(mult, m):
-    fan_in = layer_fan_in(m)
-    
-    torch.nn.init.normal_(m.weight, 0, torch.sqrt(fan_in)*m)
-    torch.nn.init.normal_(m.bias, 0, torch.sqrt(fan_in)*m)
-
-def muP_init_output(mult, m):    
-    torch.nn.init.normal_(m.weight, 0, torch.sqrt(fan_in)**2*m )
-    torch.nn.init.normal_(m.bias, 0, torch.sqrt(fan_in)**2*m )
-
-
-
 class θNet(torch.nn.Module):
     def __init__(self, θ):
         super(θNet, self).__init__()

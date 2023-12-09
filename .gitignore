@@ -1,5 +1,5 @@
-out
-.DS_Store
-src/test.py
 env
+out
+data
+.DS_Store
 src/__pycache__
