@@ -2,7 +2,9 @@ import argparse
 import os
 import models
 import torch
-import matplotlib.figure
+import matplotlib
+import matplotlib.pyplot
+import signal
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--theta", metavar="INT", help="The width scale parameter θ", type=int, default=1)
@@ -18,9 +20,15 @@ parser.add_argument("--update_frequency", metavar="INT", help="Every how many ba
 parser.add_argument("--device", choices=["cuda","mps","cpu"], help="Device used for training", default="cpu")
 args=parser.parse_args()
 
+def SIGINT_handler(sigint, frame):
+    print("\n👻 SIGINT received")
+    exit(1)
+signal.signal(signal.SIGINT, SIGINT_handler)
+
 script_path = os.path.abspath(__file__)
 src_path = os.path.dirname(script_path)
 root_path = os.path.dirname(src_path)
+res_path = root_path+"/res"
 out_path = root_path+"/out"
 
 if args.device=="cuda":
@@ -41,7 +49,10 @@ else:
     print("\x1b[32m🖥️  Using cpu\x1b[0m")
     device="cpu"
 
+matplotlib.rc_file(res_path+"/matplotlibrc")
+matplotlib.pyplot.style.use(res_path+"/blackberry_dark.mplstyle")
 training_curves = matplotlib.figure.Figure()
+training_curves.suptitle("Training curves")
 training_curves_gridspec = training_curves.add_gridspec(nrows=1,ncols=2)
 loss_curves = training_curves.add_subplot(training_curves_gridspec[0,0], xlabel="epochs", ylabel="loss")
 acc_curves = training_curves.add_subplot(training_curves_gridspec[0,1], xlabel="epochs", ylabel="accuracy")
@@ -80,9 +91,9 @@ for epoch in range(args.max_num_epochs):
         train_val_acc_list.append(train_val_acc)
         print("🕑 Epoch %d/%d, validation loss=%.2f, validation accuracy=\x1b[31m%.2f%%\x1b[0m" % (epoch, args.max_num_epochs, train_val_loss.item(), train_val_acc*100))
         loss_curves.cla()
-        loss_curves.plot(epoch_list, train_val_loss_list, color="#ff0000", label="beginning-of-epoch validation loss")
+        loss_curves.plot(epoch_list, train_val_loss_list, color="C0", marker="o", label="beginning-of-epoch validation loss")
         acc_curves.cla()
-        acc_curves.plot(epoch_list, train_val_acc_list, color="#ff0000", label="beginning-of-epoch validation accuracy")
+        acc_curves.plot(epoch_list, train_val_acc_list, color="C0", marker="o", label="beginning-of-epoch validation accuracy")
 
     model.train()
     batch_loss_list = []
@@ -106,6 +117,12 @@ for epoch in range(args.max_num_epochs):
     train_train_min_loss_list.append(min(batch_loss_list))
     train_train_max_acc_list.append(max(batch_acc_list))
     train_train_min_acc_list.append(min(batch_acc_list))
-    loss_curves.fill_between(epoch_list, train_train_min_loss_list, train_train_max_loss_list, alpha=3/8, facecolor="#ff0000")
-    acc_curves.fill_between(epoch_list, train_train_min_acc_list, train_train_max_acc_list, alpha=3/8, facecolor="#ff0000")
+    loss_curves.fill_between(epoch_list, train_train_min_loss_list, train_train_max_loss_list, facecolor="C1", alpha=3/8, label="Max/Min training loss")
+    acc_curves.fill_between(epoch_list, train_train_min_acc_list, train_train_max_acc_list, facecolor="C1", alpha=3/8, label="Max/Min training accuracy")
+    loss_curves.grid()
+    loss_curves.legend()
+    acc_curves.grid()
+    acc_curves.legend()
+    if not os.path.isdir(out_path):
+        os.makedirs(out_path)
     training_curves.savefig(out_path+"/training_curves.pdf")
