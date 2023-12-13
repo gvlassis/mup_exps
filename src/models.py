@@ -40,7 +40,7 @@ class θNet(torch.nn.Module):
 
         assert (a6.shape[-3]==384*self.θ) and (a6.shape[-2]==1) and (a6.shape[-1]==1), "a6 shaped incorrectly: %dx%dx%d" % (a6.shape[-3],a6.shape[-2],a6.shape[-1])
 
-        z7 = self.layer7(a6[...,0,0])
+        z7 = self.layer7(torch.flatten(a6, start_dim=-3, end_dim=-1))
         a7 = torch.nn.functional.relu(z7)
 
         z8 = self.layer8(a7)
@@ -126,7 +126,7 @@ class VGG16(torch.nn.Module):
 
         assert (a_block5.shape[-3]==512) and (a_block5.shape[-2]==2) and (a_block5.shape[-1]==2), "a_block5 shaped incorrectly: %dx%dx%d" % (a_block5.shape[-3],a_block5.shape[-2],a_block5.shape[-1])
 
-        a_fully_connected = self.fully_connected(torch.ravel(a_block5))
+        a_fully_connected = self.fully_connected(torch.flatten(a_block5, start_dim=-3, end_dim=-1))
 
         assert a_fully_connected.shape[-1]==1000, "a_fully_connected shaped incorrectly: %d" % (a_fully_connected.shape[-1])
 

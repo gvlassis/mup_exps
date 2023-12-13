@@ -58,7 +58,8 @@ loss_curves = training_curves.add_subplot(training_curves_gridspec[0,0], xlabel=
 acc_curves = training_curves.add_subplot(training_curves_gridspec[0,1], xlabel="epochs", ylabel="accuracy")
 
 print("🧠 Initializing model")
-model = models.θNet(args.theta).to(device)
+# model = models.θNet(args.theta).to(device)
+model = models.VGG16().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.beta1, args.beta2))
 loss_function = torch.nn.NLLLoss()
 
