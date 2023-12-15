@@ -1,6 +1,6 @@
 # The number of processes launched in parallel. Assuming ImageMagick uses 1 core, "num_processes" should be equal to the number of available threads
 num_processes="${1}"
-# The path of the CLS-LOC directory, which contains the images under train/, val/ and test/
+# The CLS-LOC directory, which contains the images under train/, val/ and test/
 CLS_LOC_path="${2}"
 # Images interval between updates of _resize()
 update_frequency="${3}"

@@ -1,8 +1,8 @@
 import torch
 
-class θNet(torch.nn.Module):
+class θNet_imagenet(torch.nn.Module):
     def __init__(self, θ):
-        super(θNet, self).__init__()
+        super(θNet_imagenet, self).__init__()
         self.θ = θ
 
         # Convolutional part
@@ -50,9 +50,9 @@ class θNet(torch.nn.Module):
 
         return a8
 
-class VGG16(torch.nn.Module):
+class VGG16_imagenet(torch.nn.Module):
     def __init__(self):
-        super(VGG16, self).__init__()
+        super(VGG16_imagenet, self).__init__()
 
         # Convolutional part
         # In: 64x64

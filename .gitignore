@@ -1,5 +1,6 @@
 env
 out
-data
+cifar
+imagenet
 .DS_Store
 src/__pycache__
