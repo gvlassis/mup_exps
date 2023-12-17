@@ -16,8 +16,8 @@ parser.add_argument("--beta1", metavar="FLOAT", help="ADAM's β1", type=float, d
 parser.add_argument("--beta2", metavar="FLOAT", help="ADAM's β2", type=float, default=0.999)
 parser.add_argument("--dataset", choices=["cifar", "imagenet"], help="Dataset to use", default="cifar")
 parser.add_argument("--dataset_device", choices=["cuda","mps","cpu"], help="Device that stores the dataset", default="cpu")
-parser.add_argument("--model", choices=["θNet", "VGG16"], help="Model to use. Input size is inferred from data", type=str, default="θNet")
-parser.add_argument("--model_arguments", nargs="*", help="", type=str, default=[])
+parser.add_argument("--architecture", choices=["θNet", "VGG16"], help="Architecture to use. Exact model depends on the dataset", type=str, default="θNet")
+parser.add_argument("--model_arguments", nargs="*", help="Arguments passed to model constructor", type=str, default=[])
 parser.add_argument("--model_device", choices=["cuda","mps","cpu"], help="Device that stores the model", default="cpu")
 args=parser.parse_args()
 
@@ -67,8 +67,7 @@ print("%d training samples" % len(train_dataset))
 print("%d validation samples" % len(val_dataset))
 
 print("🧠 Initializing model")
-# model = getattr(models, args.model+"_"+args.dataset)(*args.model_arguments).to(args.model_device)
-model = models.θNet_imagenet(1).to(args.model_device)
+model = getattr(models, args.architecture+"_"+args.dataset)(*args.model_arguments).to(args.model_device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.beta1, args.beta2))
 loss_function = torch.nn.NLLLoss()
 
