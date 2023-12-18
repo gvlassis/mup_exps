@@ -41,8 +41,8 @@ matplotlib.pyplot.style.use(res_path+"/blackberry_dark.mplstyle")
 training_curves = matplotlib.figure.Figure()
 training_curves.suptitle("Training curves")
 training_curves_gridspec = training_curves.add_gridspec(nrows=1,ncols=2)
-loss_curves = training_curves.add_subplot(training_curves_gridspec[0,0], title="loss", xlabel="epochs", ylabel="loss")
-acc_curves = training_curves.add_subplot(training_curves_gridspec[0,1], title="accuracy", xlabel="epochs", ylabel="accuracy")
+loss_curves = training_curves.add_subplot(training_curves_gridspec[0,0])
+acc_curves = training_curves.add_subplot(training_curves_gridspec[0,1])
 
 print("💾 Loading data")
 if args.dataset=="cifar":
@@ -150,8 +150,13 @@ for epoch in range(args.max_num_epochs):
 
     loss_curves.grid()
     loss_curves.legend()
+    loss_curves.set_xlabel("epochs")
+    loss_curves.set_ylabel("loss")
+
     acc_curves.grid()
     acc_curves.legend()
+    acc_curves.set_xlabel("epochs")
+    acc_curves.set_ylabel("accuracy")
 
     if not os.path.isdir(out_path):
         os.makedirs(out_path)
