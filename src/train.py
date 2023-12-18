@@ -38,6 +38,8 @@ out_path = root_path+"/out"
 
 matplotlib.rc_file(res_path+"/matplotlibrc")
 matplotlib.pyplot.style.use(res_path+"/blackberry_dark.mplstyle")
+matplotlib.font_manager.fontManager.addfont(res_path+"/FiraGO-Regular.otf")
+matplotlib.font_manager.fontManager.addfont(res_path+"/FiraGO-Bold.otf")
 training_curves = matplotlib.figure.Figure()
 training_curves.suptitle("Training curves")
 training_curves_gridspec = training_curves.add_gridspec(nrows=1,ncols=2)

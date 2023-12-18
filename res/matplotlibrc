@@ -1,7 +1,6 @@
 patch.linewidth: 0
 font.size: 16
-font.sans-serif: FiraGO, DejaVu Sans, Bitstream Vera Sans, Computer Modern Sans Serif, Lucida Grande, Verdana, Geneva, Lucid, Arial, Helvetica, Avant Garde, sans-serif
-font.monospace:  JetBrains Mono NL, DejaVu Sans Mono, Bitstream Vera Sans Mono, Computer Modern Typewriter, Andale Mono, Nimbus Mono L, Courier New, Courier, Fixed, Terminal, monospace
+font.sans-serif: FiraGO
 axes.linewidth: 0
 axes.titlesize: x-large
 xtick.bottom: False
