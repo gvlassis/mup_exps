@@ -12,6 +12,7 @@ parser.add_argument("--batch_size", metavar="INT", help="The number of samples i
 parser.add_argument("--update_frequency", metavar="INT", help="Every how many batches the train loss will be printed", type=int, default=500)
 # Use PyTorch defaults for ADAM
 parser.add_argument("--learning_rate", metavar="FLOAT", help="Learning rate of ADAM", type=float, default=0.001)
+parser.add_argument("--learning_rate_scaling", choices=["no","muP"], help="How the learning rate will be scaled", default="no")
 parser.add_argument("--beta1", metavar="FLOAT", help="ADAM's β1", type=float, default=0.9)
 parser.add_argument("--beta2", metavar="FLOAT", help="ADAM's β2", type=float, default=0.999)
 parser.add_argument("--dataset", choices=["cifar", "imagenet"], help="Dataset to use", default="cifar")
@@ -72,7 +73,16 @@ print("%d validation samples" % len(val_dataset))
 
 print("🧠 Initializing model")
 model = getattr(models, args.architecture+"_"+args.dataset)(*args.model_arguments).to(args.model_device)
-optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.beta1, args.beta2))
+
+if args.learning_rate_scaling=="no":
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.beta1, args.beta2))
+elif args.learning_rate_scaling=="muP":
+    parameterizable_modules = models.get_parameterizable_modules(model)
+    optimizer = torch.optim.Adam(
+        [{"params": parameterizable_modules[0].parameters(), "lr":args.learning_rate}]+
+        [{"params": module.parameters(), "lr":args.learning_rate/torch.nn.init._calculate_fan_in_and_fan_out(module.weight)[0]} for module in parameterizable_modules[1:]]
+        ,betas=(args.beta1, args.beta2))
+
 loss_function = torch.nn.NLLLoss()
 
 epoch_list = []

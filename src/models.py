@@ -1,7 +1,40 @@
 import torch
 
+def get_parameterizable_modules(model):
+    parameterizable_modules=[]
+    for module in model.modules():
+        if isinstance(module, torch.nn.Linear):
+            parameterizable_modules.append(module)
+        elif isinstance(module, torch.nn.Conv2d):
+            parameterizable_modules.append(module)
+
+    return parameterizable_modules
+
+def init_weights(model, init="default", coeff=1):
+    # coeff can be a string (e.g. if it is passed from the CLI)
+    coeff = float(coeff)
+
+    parameterizable_modules=get_parameterizable_modules(model)
+
+    if init=="default":
+        pass
+    elif init=="SP":
+        # TODO
+        pass
+    elif init=="μP":
+        # Input+hidden
+        for module in parameterizable_modules[:-1]:
+            fan_in, fan_out = torch.nn.init._calculate_fan_in_and_fan_out(module.weight)
+            torch.nn.init.normal_(module.weight, mean=0, std=coeff/fan_in**(1/2))
+            torch.nn.init.zeros_(module.bias)
+
+        # Output
+        fan_in, fan_out = torch.nn.init._calculate_fan_in_and_fan_out(parameterizable_modules[-1].weight)
+        torch.nn.init.normal_(parameterizable_modules[-1].weight, mean=0, std=coeff/fan_in)
+        parameterizable_modules[-1].bias = None
+
 class θNet_cifar(torch.nn.Module):
-    def __init__(self, θ):
+    def __init__(self, θ, init="default", coeff=1):
         super(θNet_cifar, self).__init__()
         # θ can be a string (e.g. if it is passed from the CLI)
         θ = int(θ)
@@ -19,8 +52,10 @@ class θNet_cifar(torch.nn.Module):
         self.layer6 = torch.nn.Linear(192*θ, 384*θ)
         self.layer7 = torch.nn.Linear(384*θ, 10)
 
+        init_weights(self, init, coeff)
+
     def forward(self, x):
-        assert (x.shape[-3]==3) and (x.shape[-2]==32) and (x.shape[-1]==32), "Input shaped incorrectly: %dx%dx%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
+        assert (x.shape[-3]==3) and (x.shape[-2]==32) and (x.shape[-1]==32), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
 
         z1 = self.layer1(x)
         a1 = torch.nn.functional.relu(z1)
@@ -37,7 +72,7 @@ class θNet_cifar(torch.nn.Module):
         z5 = self.layer5(a4)
         a5 = torch.nn.functional.relu(z5)
 
-        assert (a5.shape[-3]==192*self.θ) and (a5.shape[-2]==1) and (a5.shape[-1]==1), "a5 shaped incorrectly: %dx%dx%d" % (a5.shape[-3],a5.shape[-2],a5.shape[-1])
+        assert (a5.shape[-3]==192*self.θ) and (a5.shape[-2]==1) and (a5.shape[-1]==1), "a5 shaped incorrectly: %d×%d×%d" % (a5.shape[-3],a5.shape[-2],a5.shape[-1])
 
         z6 = self.layer6(torch.flatten(a5, start_dim=-3, end_dim=-1))
         a6 = torch.nn.functional.relu(z6)
@@ -50,7 +85,7 @@ class θNet_cifar(torch.nn.Module):
         return a7
 
 class θNet_imagenet(torch.nn.Module):
-    def __init__(self, θ):
+    def __init__(self, θ, init="default", coeff=1):
         super(θNet_imagenet, self).__init__()
         # θ can be a string (e.g. if it is passed from the CLI)
         θ = int(θ)
@@ -69,8 +104,10 @@ class θNet_imagenet(torch.nn.Module):
         self.layer7 = torch.nn.Linear(384*θ, 768*θ)
         self.layer8 = torch.nn.Linear(768*θ, 1000)
 
+        init_weights(self, init, coeff)
+
     def forward(self, x):
-        assert (x.shape[-3]==3) and (x.shape[-2]==64) and (x.shape[-1]==64), "Input shaped incorrectly: %dx%dx%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
+        assert (x.shape[-3]==3) and (x.shape[-2]==64) and (x.shape[-1]==64), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
 
         z1 = self.layer1(x)
         a1 = torch.nn.functional.relu(z1)
@@ -90,7 +127,7 @@ class θNet_imagenet(torch.nn.Module):
         z6 = self.layer6(a5)
         a6 = torch.nn.functional.relu(z6)
 
-        assert (a6.shape[-3]==384*self.θ) and (a6.shape[-2]==1) and (a6.shape[-1]==1), "a6 shaped incorrectly: %dx%dx%d" % (a6.shape[-3],a6.shape[-2],a6.shape[-1])
+        assert (a6.shape[-3]==384*self.θ) and (a6.shape[-2]==1) and (a6.shape[-1]==1), "a6 shaped incorrectly: %d×%d×%d" % (a6.shape[-3],a6.shape[-2],a6.shape[-1])
 
         z7 = self.layer7(torch.flatten(a6, start_dim=-3, end_dim=-1))
         a7 = torch.nn.functional.relu(z7)
@@ -103,7 +140,7 @@ class θNet_imagenet(torch.nn.Module):
         return a8
 
 class VGG16_cifar(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, init="default", coeff=1):
         super(VGG16_cifar, self).__init__()
 
         # Convolutional part
@@ -167,8 +204,10 @@ class VGG16_cifar(torch.nn.Module):
             torch.nn.LogSoftmax(dim=-1)
         )
 
+        init_weights(self, init, coeff)
+
     def forward(self, x):
-        assert (x.shape[-3]==3) and (x.shape[-2]==32) and (x.shape[-1]==32), "Input shaped incorrectly: %dx%dx%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
+        assert (x.shape[-3]==3) and (x.shape[-2]==32) and (x.shape[-1]==32), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
 
         a_block1 = self.block1(x)
         a_block2 = self.block2(a_block1)
@@ -176,7 +215,7 @@ class VGG16_cifar(torch.nn.Module):
         a_block4 = self.block4(a_block3)
         a_block5 = self.block5(a_block4)
 
-        assert (a_block5.shape[-3]==512) and (a_block5.shape[-2]==1) and (a_block5.shape[-1]==1), "a_block5 shaped incorrectly: %dx%dx%d" % (a_block5.shape[-3],a_block5.shape[-2],a_block5.shape[-1])
+        assert (a_block5.shape[-3]==512) and (a_block5.shape[-2]==1) and (a_block5.shape[-1]==1), "a_block5 shaped incorrectly: %d×%d×%d" % (a_block5.shape[-3],a_block5.shape[-2],a_block5.shape[-1])
 
         a_fully_connected = self.fully_connected(torch.flatten(a_block5, start_dim=-3, end_dim=-1))
 
@@ -185,7 +224,7 @@ class VGG16_cifar(torch.nn.Module):
         return a_fully_connected
 
 class VGG16_imagenet(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, init="default", coeff=1):
         super(VGG16_imagenet, self).__init__()
 
         # Convolutional part
@@ -249,8 +288,10 @@ class VGG16_imagenet(torch.nn.Module):
             torch.nn.LogSoftmax(dim=-1)
         )
 
+        init_weights(self, init, coeff)
+
     def forward(self, x):
-        assert (x.shape[-3]==3) and (x.shape[-2]==64) and (x.shape[-1]==64), "Input shaped incorrectly: %dx%dx%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
+        assert (x.shape[-3]==3) and (x.shape[-2]==64) and (x.shape[-1]==64), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
 
         a_block1 = self.block1(x)
         a_block2 = self.block2(a_block1)
@@ -258,7 +299,7 @@ class VGG16_imagenet(torch.nn.Module):
         a_block4 = self.block4(a_block3)
         a_block5 = self.block5(a_block4)
 
-        assert (a_block5.shape[-3]==512) and (a_block5.shape[-2]==2) and (a_block5.shape[-1]==2), "a_block5 shaped incorrectly: %dx%dx%d" % (a_block5.shape[-3],a_block5.shape[-2],a_block5.shape[-1])
+        assert (a_block5.shape[-3]==512) and (a_block5.shape[-2]==2) and (a_block5.shape[-1]==2), "a_block5 shaped incorrectly: %d×%d×%d" % (a_block5.shape[-3],a_block5.shape[-2],a_block5.shape[-1])
 
         a_fully_connected = self.fully_connected(torch.flatten(a_block5, start_dim=-3, end_dim=-1))
 
