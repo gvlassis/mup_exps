@@ -2,6 +2,7 @@ import argparse
 import os
 import models
 import torch
+import sys
 import matplotlib
 import matplotlib.pyplot
 import signal
@@ -43,6 +44,7 @@ matplotlib.font_manager.fontManager.addfont(res_path+"/FiraGO-Regular.otf")
 matplotlib.font_manager.fontManager.addfont(res_path+"/FiraGO-Bold.otf")
 training_curves = matplotlib.figure.Figure()
 training_curves.suptitle("Training curves")
+training_curves.supxlabel("Learning rate=%.2f, %s learning rate scaling, model arguments=" % (args.learning_rate, args.learning_rate_scaling)+ str(args.model_arguments))
 training_curves_gridspec = training_curves.add_gridspec(nrows=1,ncols=2)
 loss_curves = training_curves.add_subplot(training_curves_gridspec[0,0])
 acc_curves = training_curves.add_subplot(training_curves_gridspec[0,1])
