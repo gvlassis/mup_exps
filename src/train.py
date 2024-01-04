@@ -8,17 +8,17 @@ import matplotlib.pyplot
 import signal
 import numpy
 
-MAX_NUM_EPOCHS = 100
+MAX_NUM_EPOCHS = 200
 BATCH_SIZE = 256
-LEARNING_RATE_LIST = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
+LEARNING_RATE_LIST = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
 LEARNING_RATE_SCALING = "muP"
 BETA1 = 0.9
 BETA2 = 0.999
 DATASET = "cifar"
 DATASET_DEVICE = "cuda"
-θ_LIST = [1, 4, 16]
+θ_LIST = [1, 4, 8]
 MODEL_DEVICE = "cuda"
-NUM_MODELS = 5
+NUM_MODELS = 10
 
 def SIGINT_handler(sigint, frame):
     print("\n✋ SIGINT received")
@@ -132,6 +132,7 @@ for θ in θ_LIST:
     axes.legend()
     axes.set_xlabel("Learning rate")
     axes.set_ylabel("Validation loss")
+    axes.set_xscale("log",base=2)
 
     if not os.path.isdir(out_path):
         os.makedirs(out_path)
