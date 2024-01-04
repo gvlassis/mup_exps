@@ -70,7 +70,7 @@ for θ in θ_LIST:
     mean_list = []
     std_list = []
     for learning_rate in LEARNING_RATE_LIST:
-        print("🦸 Learning rate=%.3f" % learning_rate)
+        print("🦸 Learning rate=%.4f" % learning_rate)
         model_list = []
         for no_model in range(NUM_MODELS):
             print("🧠 Model %d" % no_model, end="")
