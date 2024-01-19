@@ -10,31 +10,38 @@ def get_parameterizable_modules(model):
 
     return parameterizable_modules
 
-def init_weights(model, init="default", coeff=1):
-    # coeff can be a string (e.g. if it is passed from the CLI)
-    coeff = float(coeff)
-
+def init_weights(model, init="default"):
     parameterizable_modules=get_parameterizable_modules(model)
 
     if init=="default":
         pass
+
     elif init=="SP":
-        # TODO
-        pass
+        for module in parameterizable_modules:
+            # fan_in and fan_out in μP and PyTorch nomenclature are different
+            fan_in = module.weight.shape[1]
+            fan_out = module.weight.shape[0]
+            torch.nn.init.normal_(module.weight, mean=0, std=1/fan_in**(1/2))
+            torch.nn.init.zeros_(module.bias)
+
     elif init=="μP":
         # Input+hidden
         for module in parameterizable_modules[:-1]:
-            fan_in, fan_out = torch.nn.init._calculate_fan_in_and_fan_out(module.weight)
-            torch.nn.init.normal_(module.weight, mean=0, std=coeff/fan_in**(1/2))
+            # fan_in and fan_out in μP and PyTorch nomenclature are different
+            fan_in = module.weight.shape[1]
+            fan_out = module.weight.shape[0]
+            torch.nn.init.normal_(module.weight, mean=0, std=1/fan_in**(1/2))
             torch.nn.init.zeros_(module.bias)
 
         # Output
-        fan_in, fan_out = torch.nn.init._calculate_fan_in_and_fan_out(parameterizable_modules[-1].weight)
-        torch.nn.init.normal_(parameterizable_modules[-1].weight, mean=0, std=coeff/fan_in)
-        parameterizable_modules[-1].bias = None
+        # fan_in and fan_out in μP and PyTorch nomenclature are different
+        fan_in = module.weight.shape[1]
+        fan_out = module.weight.shape[0]
+        torch.nn.init.normal_(parameterizable_modules[-1].weight, mean=0, std=1/fan_in)
+        torch.nn.init.zeros_(parameterizable_modules[-1].bias)
 
 class θNet_cifar(torch.nn.Module):
-    def __init__(self, θ, init="default", coeff=1):
+    def __init__(self, θ, init="default"):
         super(θNet_cifar, self).__init__()
         # θ can be a string (e.g. if it is passed from the CLI)
         θ = int(θ)
@@ -52,7 +59,7 @@ class θNet_cifar(torch.nn.Module):
         self.layer6 = torch.nn.Linear(192*θ, 384*θ)
         self.layer7 = torch.nn.Linear(384*θ, 10)
 
-        init_weights(self, init, coeff)
+        init_weights(self, init)
 
     def forward(self, x):
         assert (x.shape[-3]==3) and (x.shape[-2]==32) and (x.shape[-1]==32), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
@@ -85,7 +92,7 @@ class θNet_cifar(torch.nn.Module):
         return a7
 
 class θNet_imagenet(torch.nn.Module):
-    def __init__(self, θ, init="default", coeff=1):
+    def __init__(self, θ, init="default"):
         super(θNet_imagenet, self).__init__()
         # θ can be a string (e.g. if it is passed from the CLI)
         θ = int(θ)
@@ -104,7 +111,7 @@ class θNet_imagenet(torch.nn.Module):
         self.layer7 = torch.nn.Linear(384*θ, 768*θ)
         self.layer8 = torch.nn.Linear(768*θ, 1000)
 
-        init_weights(self, init, coeff)
+        init_weights(self, init)
 
     def forward(self, x):
         assert (x.shape[-3]==3) and (x.shape[-2]==64) and (x.shape[-1]==64), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
@@ -140,7 +147,7 @@ class θNet_imagenet(torch.nn.Module):
         return a8
 
 class VGG16_cifar(torch.nn.Module):
-    def __init__(self, init="default", coeff=1):
+    def __init__(self, init="default"):
         super(VGG16_cifar, self).__init__()
 
         # Convolutional part
@@ -204,7 +211,7 @@ class VGG16_cifar(torch.nn.Module):
             torch.nn.LogSoftmax(dim=-1)
         )
 
-        init_weights(self, init, coeff)
+        init_weights(self, init)
 
     def forward(self, x):
         assert (x.shape[-3]==3) and (x.shape[-2]==32) and (x.shape[-1]==32), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
@@ -224,7 +231,7 @@ class VGG16_cifar(torch.nn.Module):
         return a_fully_connected
 
 class VGG16_imagenet(torch.nn.Module):
-    def __init__(self, init="default", coeff=1):
+    def __init__(self, init="default"):
         super(VGG16_imagenet, self).__init__()
 
         # Convolutional part
@@ -288,7 +295,7 @@ class VGG16_imagenet(torch.nn.Module):
             torch.nn.LogSoftmax(dim=-1)
         )
 
-        init_weights(self, init, coeff)
+        init_weights(self, init)
 
     def forward(self, x):
         assert (x.shape[-3]==3) and (x.shape[-2]==64) and (x.shape[-1]==64), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])

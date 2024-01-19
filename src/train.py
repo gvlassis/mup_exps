@@ -8,9 +8,9 @@ import matplotlib.pyplot
 import signal
 import numpy
 
-MAX_NUM_EPOCHS = 200
+MAX_NUM_EPOCHS = 300
 BATCH_SIZE = 256
-LEARNING_RATE_LIST = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
+LEARNING_RATE_LIST = [0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
 LEARNING_RATE_SCALING = "muP"
 BETA1 = 0.9
 BETA2 = 0.999
@@ -70,7 +70,7 @@ for θ in θ_LIST:
     mean_list = []
     std_list = []
     for learning_rate in LEARNING_RATE_LIST:
-        print("🦸 Learning rate=%.4f" % learning_rate)
+        print("🦸 Learning rate=%.5f" % learning_rate)
         model_list = []
         for no_model in range(NUM_MODELS):
             print("🧠 Model %d" % no_model, end="")
@@ -82,7 +82,8 @@ for θ in θ_LIST:
                 parameterizable_modules = models.get_parameterizable_modules(model)
                 optimizer = torch.optim.Adam(
                     [{"params": parameterizable_modules[0].parameters(), "lr":learning_rate}]+
-                    [{"params": module.parameters(), "lr":learning_rate/torch.nn.init._calculate_fan_in_and_fan_out(module.weight)[0]} for module in parameterizable_modules[1:]]
+                    [{"params": module.weight, "lr":learning_rate/module.weight.shape[1]} for module in parameterizable_modules[1:]]+
+                    [{"params": module.bias, "lr":learning_rate} for module in parameterizable_modules[1:]]
                     ,betas=(BETA1, BETA2))
 
             loss_function = torch.nn.NLLLoss()
