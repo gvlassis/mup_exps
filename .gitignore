@@ -4,3 +4,4 @@ cifar
 imagenet
 .DS_Store
 src/__pycache__
+src/t.py

@@ -1,6 +1,7 @@
 import argparse
 import os
 import models
+import utils
 import torch
 import sys
 import matplotlib
@@ -10,10 +11,7 @@ import numpy
 
 MAX_NUM_EPOCHS = 300
 BATCH_SIZE = 256
-LEARNING_RATE_LIST = [0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
-LEARNING_RATE_SCALING = "muP"
-BETA1 = 0.9
-BETA2 = 0.999
+LEARNING_RATE_LIST = [0.0005, 0.001, 0.005, 0.01, 0.05]
 DATASET = "cifar"
 DATASET_DEVICE = "cuda"
 θ_LIST = [1, 4, 8]
@@ -65,6 +63,8 @@ elif DATASET=="imagenet":
 print("%d train samples" % len(train_dataset))
 print("%d validation samples" % len(val_dataset))
 
+proxy = models.θNet_cifar(1).to(MODEL_DEVICE)
+
 for θ in θ_LIST:
     print("🏛️  θ=%d" % θ)
     mean_list = []
@@ -74,30 +74,23 @@ for θ in θ_LIST:
         model_list = []
         for no_model in range(NUM_MODELS):
             print("🧠 Model %d" % no_model, end="")
-            model = models.θNet_cifar(θ, "μP").to(MODEL_DEVICE)
 
-            if LEARNING_RATE_SCALING=="no":
-                optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, betas=(BETA1, BETA2))
-            elif LEARNING_RATE_SCALING=="muP":
-                parameterizable_modules = models.get_parameterizable_modules(model)
-                optimizer = torch.optim.Adam(
-                    [{"params": parameterizable_modules[0].parameters(), "lr":learning_rate}]+
-                    [{"params": module.weight, "lr":learning_rate/module.weight.shape[1]} for module in parameterizable_modules[1:]]+
-                    [{"params": module.bias, "lr":learning_rate} for module in parameterizable_modules[1:]]
-                    ,betas=(BETA1, BETA2))
+            target = models.θNet_cifar(θ).to(MODEL_DEVICE)
+            utils.init_μP(proxy, target)
 
+            optimizer = utils.Adam_μP(proxy, target, learning_rate)
             loss_function = torch.nn.NLLLoss()
 
             # Beginning-of-epoch
             val_loss_list = []
             val_acc_list = []
             for epoch in range(MAX_NUM_EPOCHS):
-                model.eval()
+                target.eval()
                 with torch.no_grad():
                     val_loss_sum = 0
                     val_hits = 0
                     for batch, (batch_X, batch_Y) in enumerate(val_dataloader):
-                        batch_Y_ = model(batch_X.to(device=MODEL_DEVICE, dtype=torch.float))
+                        batch_Y_ = target(batch_X.to(device=MODEL_DEVICE, dtype=torch.float))
 
                         batch_loss = loss_function(batch_Y_, batch_Y.to(device=MODEL_DEVICE, dtype=torch.long))
                         val_loss_sum += batch_loss.item()*len(batch_X)
@@ -109,10 +102,10 @@ for θ in θ_LIST:
                     val_loss_list.append(val_loss_sum/len(val_dataset))
                     val_acc_list.append(val_hits/len(val_dataset))
 
-                model.train()
+                target.train()
                 for batch, (batch_X, batch_Y) in enumerate(train_dataloader):
                     # Forward
-                    batch_Y_ = model(batch_X.to(device=MODEL_DEVICE, dtype=torch.float))
+                    batch_Y_ = target(batch_X.to(device=MODEL_DEVICE, dtype=torch.float))
 
                     batch_loss = loss_function(batch_Y_, batch_Y.to(device=MODEL_DEVICE, dtype=torch.long))
 
