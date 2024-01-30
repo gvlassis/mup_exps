@@ -76,9 +76,12 @@ for θ in θ_LIST:
             print("🧠 Model %d" % no_model, end="")
 
             target = models.θNet_cifar(θ).to(MODEL_DEVICE)
+            # utils.init_SP(target)
             utils.init_μP(proxy, target)
 
+            # optimizer = torch.optim.Adam(target.parameters(), lr=learning_rate)
             optimizer = utils.Adam_μP(proxy, target, learning_rate)
+
             loss_function = torch.nn.NLLLoss()
 
             # Beginning-of-epoch

@@ -11,7 +11,7 @@ def get_parameterizable_modules(model):
     return parameterizable_modules
 
 def init_SP(model):
-    parameterizable_modules =get_parameterizable_modules(model)
+    parameterizable_modules = get_parameterizable_modules(model)
 
     for module in parameterizable_modules:
         # fan_in and fan_out in μP and PyTorch nomenclature are different
