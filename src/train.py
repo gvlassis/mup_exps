@@ -76,8 +76,8 @@ for θ in θ_LIST:
             print("🧠 Model %d" % no_model, end="")
 
             target = models.θNet_cifar(θ).to(MODEL_DEVICE)
-            # utils.init_SP(target)
-            utils.init_μP(proxy, target)
+            # utils.init_SP(target, κ=1/100)
+            utils.init_μP(proxy, target, κ=1/10)
 
             # optimizer = torch.optim.Adam(target.parameters(), lr=learning_rate)
             optimizer = utils.Adam_μP(proxy, target, learning_rate)

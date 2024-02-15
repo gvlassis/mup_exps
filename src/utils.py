@@ -10,7 +10,7 @@ def get_parameterizable_modules(model):
 
     return parameterizable_modules
 
-def init_SP(model):
+def init_SP(model, κ=1):
     parameterizable_modules = get_parameterizable_modules(model)
 
     for module in parameterizable_modules:
@@ -23,9 +23,9 @@ def init_SP(model):
 
         fan_in_weight = module.weight.shape[1]
         fan_out_weight = module.weight.shape[0]
-        torch.nn.init.normal_(module.weight, mean=0, std=1/fan_in_weight**(1/2))
+        torch.nn.init.normal_(module.weight, mean=0, std=κ/fan_in_weight**(1/2))
 
-def init_μP(proxy, target):
+def init_μP(proxy, target, κ=1):
     proxy_modules = get_parameterizable_modules(proxy)
     target_modules = get_parameterizable_modules(target)
 
@@ -44,7 +44,7 @@ def init_μP(proxy, target):
         fan_out_weight0 = proxy_modules[i].weight.shape[0]
         fan_in_weight = target_modules[i].weight.shape[1]
         fan_out_weight = target_modules[i].weight.shape[0]
-        torch.nn.init.normal_(target_modules[i].weight, mean=0, std=1/fan_in_weight**(1/2))
+        torch.nn.init.normal_(target_modules[i].weight, mean=0, std=κ/fan_in_weight**(1/2))
 
     # Output
     fan_in_bias0 = 1
@@ -57,7 +57,7 @@ def init_μP(proxy, target):
     fan_out_weight0 = proxy_modules[-1].weight.shape[0]
     fan_in_weight = target_modules[-1].weight.shape[1]
     fan_out_weight = target_modules[-1].weight.shape[0]
-    torch.nn.init.normal_(target_modules[-1].weight, mean=0, std=fan_in_weight0**(1/2)/fan_in_weight)
+    torch.nn.init.normal_(target_modules[-1].weight, mean=0, std=κ*fan_in_weight0**(1/2)/fan_in_weight)
 
 class Adam_μP(torch.optim.Adam):
 	def __init__(self, proxy, target, lr):
