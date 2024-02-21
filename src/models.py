@@ -313,9 +313,9 @@ class θViT_cifar(torch.nn.Module):
 
         self.embedding_layer = torch.nn.Conv2d(in_channels=3, out_channels=self.D, kernel_size=P, stride=P)
 
-        self.class_token = torch.nn.Parameter(torch.empty((self.D)))
-
-        self.pos_embeddings = torch.nn.Parameter(torch.empty((self.N+1, self.D)))
+        k= 1/torch.nn.init._calculate_fan_in_and_fan_out(self.embedding_layer.weight)[0]
+        self.class_token = torch.nn.Parameter(torch.rand((self.D))*2*k**0.5-k**0.5)
+        self.pos_embeddings = torch.nn.Parameter(torch.rand((self.N+1, self.D))*2*k**0.5-k**0.5)
 
         self.transformer_blocks = torch.nn.Sequential(*[transformer_block(self.D, heads, self.hidden) for _ in range(L)])
 
