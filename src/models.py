@@ -265,3 +265,86 @@ class VGG16_imagenet(torch.nn.Module):
         assert a_fully_connected.shape[-1]==1000, "a_fully_connected shaped incorrectly: %d" % (a_fully_connected.shape[-1])
 
         return a_fully_connected
+
+class transformer_block(torch.nn.Module):
+    def __init__(self, D, heads, hidden):
+        super().__init__()
+
+        self.D = D
+        self.heads = heads
+        self.hidden = hidden
+
+        self.norm1 = torch.nn.LayerNorm(D)
+        self.attention = torch.nn.MultiheadAttention(D, heads)
+        self.norm2 = torch.nn.LayerNorm(D)
+        self.MLP = torch.nn.Sequential(
+            torch.nn.Linear(D,hidden),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden,D)
+        )
+
+    def forward(self, x):
+        x_norm = self.norm1(x)
+        y = self.attention(x_norm,x_norm,x_norm)[0] + x
+        z = self.MLP(self.norm2(y)) + y
+
+        return z
+
+class θViT_cifar(torch.nn.Module):
+    def __init__(self, P, L, heads, θ):
+        super().__init__()
+        # P, L, heads, θ can be a strings (e.g. if they are passed from the CLI)
+        P = int(P)
+        L = int(L)
+        heads = int(heads)
+        θ = int(θ)
+
+        if 32 % P != 0:
+            raise ValueError("P (Patch size)=%d should be a divisor of 32" % P)
+
+        self.P = P
+        self.L = L
+        self.heads = heads
+        self.θ = θ
+
+        self.N = int(32/P)*int(32/P)
+        self.D = 48*θ
+        self.hidden = 2*self.D
+
+        self.embedding_layer = torch.nn.Conv2d(in_channels=3, out_channels=self.D, kernel_size=P, stride=P)
+
+        self.class_token = torch.nn.Parameter(torch.empty((self.D)))
+
+        self.pos_embeddings = torch.nn.Parameter(torch.empty((self.N+1, self.D)))
+
+        self.transformer_blocks = torch.nn.Sequential(*[transformer_block(self.D, heads, self.hidden) for _ in range(L)])
+
+        self.linear_layer = torch.nn.Linear(self.D, 10)
+
+    def forward(self, x):
+        assert (x.shape[-3]==3) and (x.shape[-2]==32) and (x.shape[-1]==32), "Input shaped incorrectly: %d×%d×%d" % (x.shape[-3],x.shape[-2],x.shape[-1])
+
+        embeddings = torch.swapdims(torch.flatten(self.embedding_layer(x),start_dim=-2),-2,-1)
+        # embeddings.shape = (batch_size*)N*D
+
+        # x: single
+        if len(x.shape)==3:
+            x_ = torch.cat((self.class_token[None,:], embeddings), dim=0)
+        # x: batch
+        else:
+            x_ = torch.cat((self.class_token.repeat(x.shape[0],1,1), embeddings), dim=1)
+
+        # x_.shape = (batch_size*)(N+1)*D
+
+        y = self.transformer_blocks(x_)
+
+        assert (y.shape[-2]==self.N+1) and (y.shape[-1]==self.D), "y shaped incorrectly: %d×%d" + (y.shape[-2], y.shape[-1])
+
+        y0 = y[...,0,:]
+
+        z0 = self.linear_layer(y0)
+        a0 = torch.nn.functional.log_softmax(z0,dim=-1)
+
+        assert a0.shape[-1]==10, "a0 shaped incorrectly: %d" % (a0.shape[-1])
+
+        return a0
