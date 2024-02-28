@@ -8,26 +8,25 @@ def main(args):
 	parser.add_argument("RUN_PATH", help="e.g. ./out/1708557689", type=os.path.abspath)
 	args=parser.parse_args(args)
 
-	θ_DIRS_LIST = [args.RUN_PATH+"/"+child for child in os.listdir(args.RUN_PATH) if os.path.isdir(args.RUN_PATH+"/"+child)]
-	LR_DIRS_LISTS = [[θ_dir+"/"+child for child in os.listdir(θ_dir) if os.path.isdir(θ_dir+"/"+child)] for θ_dir in θ_DIRS_LIST]
-	MODEL_PATHS_LISTS = [[[lr_dir+"/"+child for child in os.listdir(lr_dir) if os.path.isfile(lr_dir+"/"+child)] for lr_dir in LR_DIRS_LISTS[i]] for i,_ in enumerate(θ_DIRS_LIST)]
+	θ_LIST = sorted([int(child.split("=")[-1]) for child in os.listdir(args.RUN_PATH) if os.path.isdir("%s/%s"  % (args.RUN_PATH,child))])
+	LR_LISTS = [sorted([float(child.split("=")[-1]) for child in os.listdir("%s/θ=%d" % (args.RUN_PATH,θ)) if os.path.isdir("%s/θ=%d/%s" % (args.RUN_PATH,θ,child))]) for θ in θ_LIST]
+	MODEL_LISTS = [[sorted([int(child.split("=")[-1].split(".dat")[0]) for child in os.listdir("%s/θ=%d/lr=%s" % (args.RUN_PATH,θ,lr)) if os.path.isfile("%s/θ=%d/lr=%s/%s" % (args.RUN_PATH,θ,lr,child))]) for lr in LR_LISTS[i]] for i,θ in enumerate(θ_LIST)]
 
-	for i,θ_dir in enumerate(θ_DIRS_LIST):
-		θ = int(θ_dir.split("θ=")[-1])
+	for i,θ in enumerate(θ_LIST):
 		print("🏛️  θ=%d" % θ)
-
-		θ_path = args.RUN_PATH+("/θ=%d.dat" % θ)
+		θ_path = "%s/θ=%d.dat" % (args.RUN_PATH, θ)
 
 		print("\x1b[1mlr mean_best_val_loss top_best_val_loss bot_best_val_loss mean_best_val_acc top_best_val_acc bot_best_val_acc\x1b[0m")
 		with open(θ_path,"w") as file:
 			file.write("lr mean_best_val_loss top_best_val_loss bot_best_val_loss mean_best_val_acc top_best_val_acc bot_best_val_acc\n")
 
-		for j,lr_dir in enumerate(LR_DIRS_LISTS[i]):
-			lr = float(lr_dir.split("lr=")[-1])
+		for j,lr in enumerate(LR_LISTS[i]):
+			lr_path = "%s/θ=%d/lr=%s" % (args.RUN_PATH, θ, lr)
 
 			best_val_loss_list = []
 			best_val_acc_list = []
-			for _,model_path in enumerate(MODEL_PATHS_LISTS[i][j]):
+			for _,model in enumerate(MODEL_LISTS[i][j]):
+				model_path = "%s/model=%d.dat" % (lr_path, model)
 				with open(model_path,"r") as file:
 					# Skip header
 					header = file.readline()
@@ -52,9 +51,9 @@ def main(args):
 			top_best_val_acc = mean_best_val_acc+std_best_val_acc
 			bot_best_val_acc = mean_best_val_acc-std_best_val_acc
 
-			print("%.5f %.2f %.2f %.2f %.2f %.2f %.2f" % (lr, mean_best_val_loss, top_best_val_loss, bot_best_val_loss, mean_best_val_acc, top_best_val_acc, bot_best_val_acc))
+			print("%s %.2f %.2f %.2f %.2f %.2f %.2f" % (lr, mean_best_val_loss, top_best_val_loss, bot_best_val_loss, mean_best_val_acc, top_best_val_acc, bot_best_val_acc))
 			with open(θ_path,"a") as file:
-				file.write("%.5f %.2f %.2f %.2f %.2f %.2f %.2f\n" % (lr, mean_best_val_loss, top_best_val_loss, bot_best_val_loss, mean_best_val_acc, top_best_val_acc, bot_best_val_acc))
+				file.write("%s %.2f %.2f %.2f %.2f %.2f %.2f\n" % (lr, mean_best_val_loss, top_best_val_loss, bot_best_val_loss, mean_best_val_acc, top_best_val_acc, bot_best_val_acc))
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
