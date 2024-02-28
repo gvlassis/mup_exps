@@ -7,16 +7,18 @@ import sys
 import matplotlib
 import matplotlib.pyplot
 import signal
+import time
 import numpy
+import collect
 
-MAX_NUM_EPOCHS = 300
+MAX_NUM_EPOCHS = 4
 BATCH_SIZE = 256
-LEARNING_RATE_LIST = [0.0005, 0.001, 0.005, 0.01, 0.05]
+LR_LIST = [0.001, 0.005]
 DATASET = "cifar"
 DATASET_DEVICE = "cuda"
-θ_LIST = [1, 4, 8]
+θ_LIST = [1, 4]
 MODEL_DEVICE = "cuda"
-NUM_MODELS = 10
+NUM_MODELS = 2
 
 def SIGINT_handler(sigint, frame):
     print("\n✋ SIGINT received")
@@ -30,14 +32,8 @@ res_path = root_path+"/res"
 cifar_path = root_path+"/cifar"
 imagenet_path = root_path+"/imagenet"
 out_path = root_path+"/out"
-
-matplotlib.rc_file(res_path+"/matplotlibrc")
-matplotlib.pyplot.style.use(res_path+"/blackberry_dark.mplstyle")
-matplotlib.font_manager.fontManager.addfont(res_path+"/FiraGO-Regular.otf")
-matplotlib.font_manager.fontManager.addfont(res_path+"/FiraGO-Bold.otf")
-figure = matplotlib.figure.Figure()
-figure_gridspec = figure.add_gridspec(nrows=1,ncols=1)
-axes = figure.add_subplot(figure_gridspec[0,0])
+run_path = out_path+"/"+str(int(time.time()))
+print("📁 run_path=%s" %(run_path))
 
 print("💾 Loading data")
 if DATASET=="cifar":
@@ -63,30 +59,35 @@ elif DATASET=="imagenet":
 print("%d train samples" % len(train_dataset))
 print("%d validation samples" % len(val_dataset))
 
-proxy = models.θNet_cifar(1).to(MODEL_DEVICE)
+# proxy = models.θNet_cifar(1).to(MODEL_DEVICE)
 
 for θ in θ_LIST:
     print("🏛️  θ=%d" % θ)
-    mean_list = []
-    std_list = []
-    for learning_rate in LEARNING_RATE_LIST:
-        print("🦸 Learning rate=%.5f" % learning_rate)
-        model_list = []
-        for no_model in range(NUM_MODELS):
-            print("🧠 Model %d" % no_model, end="")
+    θ_path = run_path+("/θ=%d" % θ)
 
+    for lr in LR_LIST:
+        print("🦸 Learning rate=%.5f" % lr)
+        lr_path = θ_path+("/lr=%.5f" % lr)
+        if not os.path.isdir(lr_path):
+            os.makedirs(lr_path)
+
+        for model in range(NUM_MODELS):
+            print("🧠 Model %d" % model)
+            model_path = lr_path+("/model=%d.dat" % model)
+            print("\x1b[1mepoch val_loss val_acc train_loss train_acc\x1b[0m")
+            with open(model_path,"w") as file:
+                file.write("epoch val_loss val_acc train_loss train_acc\n")
+
+            # target = models.θViT_cifar(P=4, L=2, heads=4, θ=θ).to(MODEL_DEVICE)
             target = models.θNet_cifar(θ).to(MODEL_DEVICE)
             # utils.init_SP(target, κ=1/100)
-            utils.init_μP(proxy, target, κ=1/10)
+            # utils.init_μP(proxy, target, κ=1/10)
 
-            # optimizer = torch.optim.Adam(target.parameters(), lr=learning_rate)
-            optimizer = utils.Adam_μP(proxy, target, learning_rate)
+            optimizer = torch.optim.Adam(target.parameters(), lr=lr)
+            # optimizer = utils.Adam_μP(proxy, target, lr)
 
             loss_function = torch.nn.NLLLoss()
 
-            # Beginning-of-epoch
-            val_loss_list = []
-            val_acc_list = []
             for epoch in range(MAX_NUM_EPOCHS):
                 target.eval()
                 with torch.no_grad():
@@ -102,35 +103,36 @@ for θ in θ_LIST:
                         batch_hits = torch.sum( batch_pred==batch_Y.to(MODEL_DEVICE) ).item()
                         val_hits += batch_hits
 
-                    val_loss_list.append(val_loss_sum/len(val_dataset))
-                    val_acc_list.append(val_hits/len(val_dataset))
+                    val_loss = val_loss_sum/len(val_dataset)
+                    val_acc = (val_hits/len(val_dataset))*100
 
                 target.train()
+                train_loss_sum = 0
+                train_hits = 0
                 for batch, (batch_X, batch_Y) in enumerate(train_dataloader):
                     # Forward
                     batch_Y_ = target(batch_X.to(device=MODEL_DEVICE, dtype=torch.float))
 
                     batch_loss = loss_function(batch_Y_, batch_Y.to(device=MODEL_DEVICE, dtype=torch.long))
+                    train_loss_sum += batch_loss.item()*len(batch_X)
+
+                    batch_pred = torch.argmax(batch_Y_, dim=-1)
+                    batch_hits = torch.sum( batch_pred==batch_Y.to(MODEL_DEVICE) ).item()
+                    train_hits += batch_hits
 
                     # Backward
                     optimizer.zero_grad()
                     batch_loss.backward()
                     optimizer.step()
 
-            model_list.append(min(val_loss_list))
-            print(", validation loss=%.2f" % (model_list[-1]))
+                train_loss = train_loss_sum/len(train_dataset)
+                train_acc = (train_hits/len(train_dataset))*100
 
-        mean_list.append(numpy.mean(model_list))
-        std_list.append(numpy.std(model_list))
+                print("%d %.2f %.2f %.2f %.2f" % (epoch, val_loss, val_acc, train_loss, train_acc))
+                with open(model_path,"a") as file:
+                    file.write("%d %.2f %.2f %.2f %.2f\n" % (epoch, val_loss, val_acc, train_loss, train_acc))
 
-    axes.plot(LEARNING_RATE_LIST, mean_list, marker="o", label="θ=%d" % (θ))
-    axes.fill_between(LEARNING_RATE_LIST, numpy.array(mean_list)-numpy.array(std_list), numpy.array(mean_list)+numpy.array(std_list), alpha=3/8)
-    axes.grid(True)
-    axes.legend()
-    axes.set_xlabel("Learning rate")
-    axes.set_ylabel("Validation loss")
-    axes.set_xscale("log",base=2)
+args = [run_path]
+collect.main(args)
 
-    if not os.path.isdir(out_path):
-        os.makedirs(out_path)
-    figure.savefig(out_path+"/figure.pdf")
+os.system("TEXINPUTS=%s: OPENTYPEFONTS=%s: lualatex --shell-escape --output-directory=%s --interaction=batchmode '\def\\runpath{%s}\input{%s/plots.tex}'" % (res_path, res_path, run_path, run_path, res_path))

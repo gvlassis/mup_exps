@@ -1,0 +1,56 @@
+\documentclass{article}
+	\pagestyle{empty}
+\usepackage[a4paper,landscape]{geometry}
+\usepackage{fontspec}[no-math]
+	\setmainfont{FiraGO}
+\usepackage{unicode-math}
+	\setmathfont{FiraMath}
+\usepackage{ragged2e}
+\usepackage{pgfplots}
+	\pgfplotsset{compat=newest}
+	\usepgfplotslibrary{fillbetween}
+\usepackage{shellesc}
+	\immediate\write18{find '\runpath' -maxdepth 1 -name '*.dat' -exec basename {} .dat ';' | tr '\string\n' ',' | sed 's/,$//' > filelist.txt}
+\usepackage{catchfile}
+	\CatchFileDef{\filelist}{filelist.txt}{\endlinechar=-1}
+\usepackage{blueberry_light}
+\usepackage{m3_article}
+
+\begin{document}
+
+\begin{figure}[!h]
+
+\Centering
+
+\begin{tikzpicture}
+\begin{axis}[xlabel=lr, ylabel=val\_loss, xmode=log, log basis x=2]
+	\foreach \file in \filelist{
+		\addplot table [x=lr, y=mean_best_val_loss] {\runpath/\file.dat};
+		\pgfplotsset{cycle list shift=-1}
+		\addplot+[name path=top, opacity=0, forget plot] table [x=lr, y=top_best_val_loss] {\runpath/\file.dat};
+		\addplot+[name path=bot, opacity=0, forget plot] table [x=lr, y=bot_best_val_loss] {\runpath/\file.dat};
+		\addplot+[opacity=3/8, forget plot] fill between [of=top and bot];
+		\pgfplotsset{cycle list shift=0}
+	}
+\end{axis}
+\end{tikzpicture}
+%
+\begin{tikzpicture}
+\begin{axis}[xlabel=lr, ylabel=val\_acc, xmode=log, log basis x=2]
+	\foreach \file in \filelist{
+		\addplot table [x=lr, y=mean_best_val_acc] {\runpath/\file.dat};
+		\expandafter\addlegendentry\expandafter{\file}
+		\pgfplotsset{cycle list shift=-1}
+		\addplot+[name path=top, opacity=0, forget plot] table [x=lr, y=top_best_val_acc] {\runpath/\file.dat};
+		\addplot+[name path=bot, opacity=0, forget plot] table [x=lr, y=bot_best_val_acc] {\runpath/\file.dat};
+		\addplot+[opacity=3/8, forget plot] fill between [of=top and bot];
+		\pgfplotsset{cycle list shift=0}
+	}
+\end{axis}
+\end{tikzpicture}
+
+\end{figure}
+
+\immediate\write18{rm filelist.txt}
+
+\end{document}

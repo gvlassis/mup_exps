@@ -1,0 +1,74 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{m3_article}
+
+\RequirePackage{ragged2e}
+
+\RequirePackage{xcolor}
+	\pagecolor{surface}
+	\color{onSurface}
+
+\RequirePackage[pagestyles,explicit]{titlesec}
+	\titleformat{\section}{}{\Large\bfseries\color{secondary}\arabic{section}}{1em}{{\Large\bfseries\color{secondary}#1}}
+
+\RequirePackage[labelfont={color=secondary}, textfont={color=onSurface}]{caption}
+
+\RequirePackage{listings}
+	\lstset{
+		basicstyle=\ttfamily,
+		commentstyle=\itshape\color{tertiary},
+		stringstyle=\color{yellow},
+		numberstyle=\ttfamily\color{onSurfaceVariant},
+		backgroundcolor=\color{surfaceContainerLow}
+	}
+
+\RequirePackage{hyperref}
+	\hypersetup{
+		colorlinks=true,
+		allcolors=tertiary
+	}
+
+\renewcommand{\maketitle}{
+	\begin{Center}
+
+	{\LARGE\bfseries\color{primary}\@title\par}
+
+	\vspace{1em}
+
+	{\large\color{secondary}\@author\par}
+
+	\vspace{1em}
+
+	{\large\color{secondary}\@date\par}
+
+	\end{Center}
+}
+
+\RequirePackage{pgfplots}
+	\pgfplotscreateplotcyclelist{m3_cycle}{{blue},{red},{green},{magenta},{cyan},{bright_blue},{bright_red},{bright_green},{bright_magenta},{bright_cyan}}
+	\usetikzlibrary{arrows.meta}
+	\pgfplotsset{
+		cycle list name=m3_cycle,
+		axis background/.style={fill=surfaceContainer},
+		legend style={fill=surfaceContainerHighest,draw=none},
+		enlarge x limits=false,
+		axis x line=bottom,
+		axis y line=left,
+		minor x tick num=3,
+		minor y tick num=3,
+		every major tick/.append style={color=onSurface,very thick},
+		every minor tick/.append style={color=onSurface,thin},
+		xtick align=outside,
+		ytick align=outside,
+		xmajorgrids=true,
+		ymajorgrids=true,
+		major grid style={color=surface, thin},
+		legend pos=outer north east,
+		every axis plot/.append style={mark=*, mark options={scale=0.8}},
+		axis line style={-{Latex[scale=1.2]}},
+		colorbar style={ytick align=inside, font=\footnotesize},
+		scaled ticks=false,
+		tick label style={/pgf/number format/fixed, /pgf/number format/precision=10}
+	}
+
+\RequirePackage[datesep=/]{datetime2}
+	\DTMsetstyle{ddmmyyyy}
