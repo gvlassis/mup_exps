@@ -5,7 +5,7 @@ import torch
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("cifar_10_batches_py", help="The cifar-10-batches-py directory, which contains the images in data_batch_[1-5] and test_batch", type=os.path.abspath)
-parser.add_argument("out_path", help="The directory which will contain train_X, train_Y, test_X, test_Y", type=os.path.abspath)
+parser.add_argument("out_path", help="The directory which will contain train_X.pt, train_Y.pt, test_X.pt, test_Y.pt", type=os.path.abspath)
 args=parser.parse_args()
 
 print("💾 Loading data")

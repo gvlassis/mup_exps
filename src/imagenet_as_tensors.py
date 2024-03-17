@@ -7,7 +7,7 @@ import torchvision
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("CLS_LOC_path", help="The CLS-LOC directory, which contains the images under train/, val/ and test/", type=os.path.abspath)
-parser.add_argument("out_path", help="The directory which will contain train_X, train_Y, val_X, val_Y, test_X", type=os.path.abspath)
+parser.add_argument("out_path", help="The directory which will contain train_X.pt, train_Y.pt, val_X.pt, val_Y.pt, test_X.pt", type=os.path.abspath)
 parser.add_argument("update_frequency", help="\x1b[1mTrain\x1b[0m images interval between updates", type=int)
 parser.add_argument("height", help="The height of images", type=int)
 args=parser.parse_args()
@@ -21,7 +21,7 @@ res_path = root_path+"/res"
 WNID_to_ILSVRC2015_CLSLOC_ID = dict(numpy.loadtxt(res_path+"/map_clsloc.txt", dtype="U9,i", usecols=(0,1)))
 val_Y = torch.tensor(numpy.loadtxt(res_path+"/ILSVRC2015_clsloc_validation_ground_truth.txt", dtype="i"))
 if not os.path.isdir(args.out_path):
-        os.makedirs(args.out_path)
+    os.makedirs(args.out_path)
 torch.save(val_Y,args.out_path+"/val_Y.pt")
 
 train_images_paths = glob.glob("%s/train/**/*.JPEG" % args.CLS_LOC_path, recursive=True)

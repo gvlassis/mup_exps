@@ -5,4 +5,5 @@ dependencies:
   - pip:
     - torch
     - torchvision
-    - matplotlib
+    - tokenizers
+    - datasets

@@ -2,6 +2,8 @@ env
 out
 cifar
 imagenet
+minipile
+openwebtext
 .DS_Store
 src/__pycache__
 src/t.py
